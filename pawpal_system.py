@@ -421,54 +421,40 @@ class Scheduler:
         """
         Check if a new task/walk conflicts with existing tasks for the same pet.
         
-        Implements time-range overlap detection using the mathematical principle:
-        Two ranges overlap if: range1_start < range2_end AND range1_end > range2_start
-        
-        This method scans all uncompleted walk tasks for a pet and checks whether
-        the new scheduled time overlaps with any existing walks. For example, a
-        30-minute walk at 8:00 AM (ends 8:30) will conflict with a walk at 8:15 AM.
+        Overlap detection: new_start < existing_end AND new_end > existing_start
+        Ignores completed tasks/walks.
         
         Args:
-            pet (Pet): The pet for which to check conflicts.
-            scheduled_time (datetime): The proposed start time for the new walk.
-            duration (int): The duration of the new walk in minutes. Default: 30.
+            pet (Pet): The pet to check for conflicts
+            scheduled_time (datetime): Proposed start time for new walk
+            duration (int): Duration in minutes for new walk (default: 30)
         
         Returns:
             tuple: (has_conflict: bool, conflict_message: str)
-                   - has_conflict: True if overlap detected, False if safe to schedule
-                   - conflict_message: User-friendly message with conflict details or confirmation
         
         Example:
-            >>> has_conflict, msg = scheduler.hasConflict(dog, morning_time, 30)
+            >>> has_conflict, msg = scheduler.hasConflict(dog, 8:00 AM, 30)
             >>> if has_conflict:
-            ...     print(msg)  # "⚠️  CONFLICT: Buddy already has 'Walk Buddy' at 08:15 AM..."
-            >>> else:
-            ...     scheduler.scheduleWalk(dog, morning_time, 30)
-        
-        Note:
-            This is a "lightweight" approach that returns warnings instead of
-            throwing exceptions, allowing graceful error handling in the UI layer.
+            ...     print(msg)  # "⚠️ CONFLICT: Buddy already has 'Walk' at 8:15 AM"
         """
         new_end_time = scheduled_time + timedelta(minutes=duration)
         conflicts = []
         
-        # Get all uncompleted tasks for this pet
-        pet_tasks = [task for task in pet.tasks if not task.isCompleted]
+        # Get all UNCOMPLETED tasks for this pet with walks
+        pet_tasks = [task for task in pet.tasks if not task.isCompleted and task.walk]
         
         for task in pet_tasks:
-            if task.walk:
-                # This is a walk task, check for time overlap
-                task_end_time = task.dueDate + timedelta(minutes=task.walk.duration)
-                
-                # Check if new task overlaps with existing task
-                # Overlap occurs if: new_start < existing_end AND new_end > existing_start
-                if scheduled_time < task_end_time and new_end_time > task.dueDate:
-                    existing_time = task.dueDate.strftime("%I:%M %p")
-                    new_time = scheduled_time.strftime("%I:%M %p")
-                    conflicts.append(
-                        f"⚠️  CONFLICT: {pet.name} already has '{task.description}' "
-                        f"at {existing_time} (duration: {task.walk.duration} min)"
-                    )
+            # Calculate end time of existing walk
+            task_end_time = task.dueDate + timedelta(minutes=task.walk.duration)
+            
+            # Check if new task overlaps with existing task
+            # Overlap occurs if: new_start < existing_end AND new_end > existing_start
+            if scheduled_time < task_end_time and new_end_time > task.dueDate:
+                existing_time = task.dueDate.strftime("%I:%M %p")
+                conflicts.append(
+                    f"⚠️  CONFLICT: {pet.name} already has '{task.description}' "
+                    f"at {existing_time} (duration: {task.walk.duration} min)"
+                )
         
         if conflicts:
             return (True, "\n".join(conflicts))
@@ -525,3 +511,11 @@ class Scheduler:
                         all_conflicts.append(conflict_msg)
         
         return all_conflicts
+    
+    def getCompletedTasks(self) -> List[Task]:
+        """Return all completed tasks.
+        
+        Returns:
+            List[Task]: All tasks where isCompleted == True
+        """
+        return self.getTasksByStatus(completed=True)
