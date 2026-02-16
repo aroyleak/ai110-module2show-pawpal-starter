@@ -41,3 +41,82 @@ pip install -r requirements.txt
 5. Add tests to verify key behaviors.
 6. Connect your logic to the Streamlit UI in `app.py`.
 7. Refine UML so it matches what you actually built.
+
+---
+
+## 🐾 Smarter Scheduling Features (Phase 2)
+
+PawPal+ now includes intelligent scheduling algorithms that go beyond simple task lists:
+
+### **1. Priority + Time Sorting** ⭐
+- **What it does:** Tasks are sorted by priority level first (High → Medium → Low), then chronologically
+- **Why it matters:** Pet owners see urgent tasks first, but within each tier tasks flow naturally by time
+- **Method:** `sortTasksByPriority(tasks)` uses multi-key tuple sorting
+
+### **2. Intelligent Conflict Detection** 🚨
+- **What it does:** Prevents overlapping walks for the same pet using time-range overlap detection
+- **Algorithm:** Checks if `new_start < existing_end AND new_end > existing_start`
+- **Tradeoff:** Rejects conflicts outright (no manual override) for guaranteed correctness
+- **Methods:** `hasConflict()` for single checks, `checkAllConflicts()` for full validation
+
+### **3. Recurring Task Automation** 🔄
+- **What it does:** Daily/weekly tasks automatically spawn new instances when completed
+- **How it works:** When "Feed Buddy" (daily) is marked done, tomorrow's feeding is auto-created
+- **Implementation:** Uses `timedelta(days=1)` or `timedelta(weeks=1)` for date math
+- **Methods:** `createRecurringTask()` to initialize, `completeTask()` to expand
+
+### **4. Smart Filtering** 🎯
+- **By Pet:** `getTasksByPetName()` — quickly see all tasks for one pet
+- **By Status:** `getTasksByStatus()` — separate pending from completed tasks
+- **By Priority:** `getTasksByPriority()` — focus on urgent work first
+- **Dashboard View:** `getOrganizedTodaysTasks()` — nested dict for multi-pet households
+
+### **5. Comprehensive Scheduling Reports**
+- **Today's Schedule:** `getOrganizedTodaysTasks()` shows all pending tasks grouped by pet, sorted by urgency
+- **Conflict Audits:** `checkAllConflicts()` validates entire schedule for impossible overlaps
+- **Status Summary:** `getPendingTasks()` and `getTasksByStatus()` track work progress
+
+### Example Usage
+
+```python
+from pawpal_system import User, Pet, Scheduler
+from datetime import datetime, timedelta
+
+# Setup
+user = User(userId="u1", name="Malik", email="malik@pawpal.com")
+dog = Pet(petId="p1", name="Buddy", breed="Golden", age=3)
+user.addPet(dog)
+scheduler = Scheduler(user)
+
+# Create a recurring daily task
+today = datetime.now()
+morning = today.replace(hour=8, minute=0)
+scheduler.createRecurringTask(dog, "Feed Buddy", morning, "high", recurrence="daily")
+
+# Schedule walks with conflict detection
+walk_time = today.replace(hour=9, minute=0)
+scheduler.scheduleWalk(dog, walk_time, 30)
+
+# View organized schedule
+schedule = scheduler.getOrganizedTodaysTasks()
+for pet_name, tasks in schedule.items():
+    print(f"🐾 {pet_name}")
+    for task in tasks:
+        print(f"  {task.dueDate.strftime('%H:%M')} - {task.description}")
+```
+
+### Testing
+
+Run the test suite to verify algorithm correctness:
+
+```bash
+pytest tests/test_pawpal.py -v
+```
+
+Key test categories:
+- **Task Completion:** Mark complete & expand recurring tasks
+- **Conflict Detection:** Overlapping vs. non-overlapping walks
+- **Sorting:** Priority-based + time-based ordering
+5. Add tests to verify key behaviors.
+6. Connect your logic to the Streamlit UI in `app.py`.
+7. Refine UML so it matches what you actually built.
