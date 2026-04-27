@@ -120,3 +120,61 @@ Key test categories:
 5. Add tests to verify key behaviors.
 6. Connect your logic to the Streamlit UI in `app.py`.
 7. Refine UML so it matches what you actually built.
+
+
+Testing PawPal+
+Sorting Correctness (5 tests) – Validates that tasks are ordered by priority first, then by time.
+
+test_sort_by_time_chronological_order – Verifies morning tasks appear before afternoon tasks regardless of input order.
+
+test_sort_by_priority_high_first – Confirms high-priority tasks come before medium/low even if scheduled later.
+
+test_sort_priority_same_time_different_priorities – Ensures priority wins as the tiebreaker when times are identical.
+
+test_sort_empty_list – Tests that sorting an empty list returns an empty list without crashing.
+
+test_sort_single_task – Validates that a single task list remains intact after sorting.
+
+Recurring Task Logic (5 tests) – Ensures daily/weekly tasks automatically create next occurrences when marked complete.
+
+test_daily_task_creates_next_day_occurrence – Confirms completing a task at 8 AM creates a new task for tomorrow at 8 AM.
+
+test_weekly_task_creates_next_week_occurrence – Verifies weekly tasks expand exactly 7 days into the future.
+
+test_one_time_task_no_expansion – Ensures one-time tasks do not create new instances when completed.
+
+test_recurring_task_chain – Tests that recurring tasks can be completed multiple times, each generating the next occurrence.
+
+test_recurring_expansion_preserves_metadata – Confirms expanded tasks retain description, priority, pet, and recurrence type.
+
+Conflict Detection (10 tests) – Validates the scheduler prevents overlapping walks and catches impossible schedules.
+
+test_conflict_identical_times – Ensures two walks at the exact same time are flagged as conflicts.
+
+test_conflict_overlapping_walks – Detects when a walk at 8:15 AM overlaps with an existing 8:00–8:30 AM walk.
+
+test_no_conflict_back_to_back_walks – Allows walks that start exactly when another ends (8:30 to 8:30 transition).
+
+test_no_conflict_gap_between_walks – Permits walks with a gap between them without flagging conflicts.
+
+test_conflict_with_completed_walks_ignored – Completed walks don't block new scheduling at the same time.
+
+test_no_conflict_different_pets – Allows simultaneous walks for different pets without conflict detection.
+
+test_conflict_partial_overlap_start – Catches overlaps at the beginning of a scheduled walk window.
+
+test_conflict_partial_overlap_end – Catches overlaps at the end of a scheduled walk window.
+
+test_check_all_conflicts_empty_schedule – Returns an empty conflict list when no overlaps exist.
+
+test_check_all_conflicts_detects_all – Scans the entire schedule and reports all detected conflicts.
+
+Filtering Logic (5 tests) – Verifies tasks can be filtered by pet name and completion status.
+
+test_filter_by_pet_name – Returns only tasks for the specified pet, excluding other pets' tasks.
+
+test_filter_by_pet_name_case_insensitive – Ensures filtering works regardless of uppercase or lowercase input.
+
+test_filter_by_completion_status_pending – Returns only uncompleted tasks when filtering for pending items.
+
+test_filter_by_completion_status_completed – Returns only finished tasks when filtering for completed items.
